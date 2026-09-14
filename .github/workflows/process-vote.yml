@@ -1,0 +1,99 @@
+name: Process Vote Issue
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+  contents: write
+
+jobs:
+  process-vote:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Parse and Record Vote
+        env:
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          import os, json, re, urllib.request, urllib.error
+          from datetime import datetime
+
+          title = os.environ.get("ISSUE_TITLE", "")
+          issue_num = os.environ.get("ISSUE_NUMBER", "")
+          token = os.environ.get("GH_TOKEN", "")
+
+          match = re.match(r"^VOTE-(confirm|false_positive)-(.+)$", title)
+          if not match:
+              print("Invalid vote format.")
+              req = urllib.request.Request(f"https://api.github.com/repos/${{ github.repository }}/issues/{issue_num}/comments",
+                  data=json.dumps({"body": "Invalid vote format."}).encode(),
+                  headers={"Authorization": f"Bearer {token}", "Accept": "application/vnd.github.v3+json"})
+              urllib.request.urlopen(req)
+              req_close = urllib.request.Request(f"https://api.github.com/repos/${{ github.repository }}/issues/{issue_num}",
+                  method="PATCH", data=json.dumps({"state": "closed"}).encode(),
+                  headers={"Authorization": f"Bearer {token}", "Accept": "application/vnd.github.v3+json"})
+              urllib.request.urlopen(req_close)
+              exit(0)
+
+          vote = match.group(1)
+          finding_id = match.group(2)
+
+          try:
+              with open("votes.json", "r") as f:
+                  votes = json.load(f)
+          except:
+              votes = []
+
+          votes.append({
+              "finding_id": finding_id,
+              "vote": vote,
+              "timestamp": datetime.utcnow().isoformat() + "Z",
+              "repo_hash": "unknown"
+          })
+
+          with open("votes.json", "w") as f:
+              json.dump(votes, f, indent=2)
+
+          # Recompute metrics
+          tp = len([v for v in votes if v["vote"] == "confirm"])
+          fp = len([v for v in votes if v["vote"] == "false_positive"])
+          precision = tp / (tp + fp) if (tp + fp) > 0 else 1.0
+
+          metrics = {
+              "total_votes": len(votes),
+              "confirm_count": tp,
+              "false_positive_count": fp,
+              "precision": round(precision, 4)
+          }
+
+          with open("metrics.json", "w") as f:
+              json.dump(metrics, f, indent=2)
+
+          # Close issue
+          req = urllib.request.Request(f"https://api.github.com/repos/${{ github.repository }}/issues/{issue_num}/comments",
+              data=json.dumps({"body": "Vote recorded."}).encode(),
+              headers={"Authorization": f"Bearer {token}", "Accept": "application/vnd.github.v3+json"})
+          urllib.request.urlopen(req)
+          req_close = urllib.request.Request(f"https://api.github.com/repos/${{ github.repository }}/issues/{issue_num}",
+              method="PATCH", data=json.dumps({"state": "closed"}).encode(),
+              headers={"Authorization": f"Bearer {token}", "Accept": "application/vnd.github.v3+json"})
+          urllib.request.urlopen(req_close)
+        shell: python
+
+      - name: Commit changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add votes.json metrics.json
+          git commit -m "Record vote and update metrics" || exit 0
+          git push

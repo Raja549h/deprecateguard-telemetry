@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>DeprecateGuard Telemetry</title>
+  <style>
+    body { font-family: sans-serif; max-width: 800px; margin: 40px auto; line-height: 1.6; }
+    .metric { font-size: 2em; font-weight: bold; color: #0366d6; }
+    .card { border: 1px solid #e1e4e8; border-radius: 6px; padding: 20px; margin-bottom: 20px; }
+  </style>
+</head>
+<body>
+  <h1>DeprecateGuard Live Telemetry</h1>
+  <div class="card" id="metrics">Loading metrics...</div>
+  
+  <script>
+    fetch('metrics.json')
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById('metrics').innerHTML = `
+          <p>Total Votes: <span class="metric">${data.total_votes}</span></p>
+          <p>Confirmed: <span class="metric">${data.confirm_count}</span></p>
+          <p>False Positives: <span class="metric">${data.false_positive_count}</span></p>
+          <p>Global Precision: <span class="metric">${(data.precision * 100).toFixed(1)}%</span></p>
+        `;
+      });
+  </script>
+</body>
+</html>
