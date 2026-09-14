@@ -1,1 +1,8 @@
-[]
+[
+  {
+    "finding_id": "DG-TWILIO-MESSAGES-CREATE",
+    "vote": "confirm",
+    "timestamp": "2026-09-14T03:49:57.902559Z",
+    "repo_hash": "unknown"
+  }
+]
