@@ -6,22 +6,31 @@
     body { font-family: sans-serif; max-width: 800px; margin: 40px auto; line-height: 1.6; }
     .metric { font-size: 2em; font-weight: bold; color: #0366d6; }
     .card { border: 1px solid #e1e4e8; border-radius: 6px; padding: 20px; margin-bottom: 20px; }
+    .disclaimer { font-style: italic; color: #666; font-size: 0.9em; margin-top: 20px; }
   </style>
 </head>
 <body>
   <h1>DeprecateGuard Live Telemetry</h1>
   <div class="card" id="metrics">Loading metrics...</div>
   
+  <p class="disclaimer">Note: Recall is not measurable from user votes (self-selected sample). Global precision requires a statistically significant baseline (≥100 votes across ≥10 repos) to display.</p>
+
   <script>
     fetch('metrics.json')
       .then(res => res.json())
       .then(data => {
-        document.getElementById('metrics').innerHTML = `
+        let html = `
           <p>Total Votes: <span class="metric">${data.total_votes}</span></p>
           <p>Confirmed: <span class="metric">${data.confirm_count}</span></p>
           <p>False Positives: <span class="metric">${data.false_positive_count}</span></p>
-          <p>Global Precision: <span class="metric">${(data.precision * 100).toFixed(1)}%</span></p>
+          <p>Distinct Repositories: <span class="metric">${data.distinct_repos || 0}</span></p>
         `;
+        
+        if (data.precision !== undefined) {
+            html += `<p>Global Precision: <span class="metric">${(data.precision * 100).toFixed(1)}%</span></p>`;
+        }
+        
+        document.getElementById('metrics').innerHTML = html;
       });
   </script>
 </body>
