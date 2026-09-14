@@ -1,6 +1,6 @@
 {
-  "total_votes": 4,
-  "confirm_count": 1,
+  "total_votes": 3,
+  "confirm_count": 0,
   "false_positive_count": 3,
   "distinct_repos": 3
 }

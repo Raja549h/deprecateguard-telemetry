@@ -103,6 +103,8 @@ jobs:
               "distinct_repos": distinct_repos
           }
           
+          assert metrics["total_votes"] == len(votes), "Mismatch between computed metrics and votes array"
+          
           # Gate precision display behind >=100 votes across >=10 repos
           if len(votes) >= 100 and distinct_repos >= 10:
               precision = tp / (tp + fp) if (tp + fp) > 0 else 1.0

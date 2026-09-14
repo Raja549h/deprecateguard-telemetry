@@ -1,11 +1,5 @@
 [
   {
-    "finding_id": "DG-TWILIO-MESSAGES-CREATE",
-    "vote": "confirm",
-    "timestamp": "2026-09-14T03:49:57.902559Z",
-    "repo_hash": "unknown"
-  },
-  {
     "finding_id": "DG-ANTHROPIC-MESSAGES-CREATE",
     "vote": "false_positive",
     "timestamp": "2026-09-14T03:52:59.511674Z",
